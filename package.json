@@ -1,0 +1,13 @@
+{
+  "name": "@nesterow/offload",
+  "version": "0.0.1",
+  "description": "Offload heavy tasks to a separate thread using workers",
+  "module": "offload.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
