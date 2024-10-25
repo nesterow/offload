@@ -142,7 +142,5 @@ function withMessageInterceptor(worker) {
 export {
   offload,
   handler,
-  createPooledCallback,
-  createBufferedCallback,
   OffloadError
 };

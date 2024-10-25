@@ -4,6 +4,9 @@ declare var self: Worker;
 
 type HandlerCallback<T, E> = ((data: E) => T) | ((data: E) => Awaited<T>);
 
+/**
+ * Handler wraps a callback function to be used as a worker handler
+ */
 export async function handler<T, E>(fn: HandlerCallback<T, E>): Promise<void> {
   self.addEventListener("message", async (event) => {
     const request = event.data as WorkerRequest<E>;

@@ -82,7 +82,7 @@ function createTaskCallback<T, E>(
   return cb;
 }
 
-export function createBufferedCallback<T, E>(
+function createBufferedCallback<T, E>(
   bufSize: number,
   fun: () => TaskCallback<T, E>,
 ): [Callback<T, E>, Terminator] {
@@ -112,7 +112,7 @@ export function createBufferedCallback<T, E>(
   return [call, term];
 }
 
-export function createPooledCallback<T, E>(
+function createPooledCallback<T, E>(
   poolSize: number,
   fun: () => TaskCallback<T, E>,
 ): [Callback<T, E>, Terminator] {
