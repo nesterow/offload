@@ -38,11 +38,12 @@ function offload(url, poolSize = 1, mode = "cb") {
 function createTaskCallback(worker, eof) {
   const cb = async function(data) {
     const id = createTaskId();
-    worker.addEventListener("error", (event) => {
+    const errorCallback = (event) => {
       const error = event.message;
       workerTasks.get(worker)?.get(id)?.reject(new OffloadError(error, id));
       workerTasks.get(worker)?.delete(id);
-    }, { once: true });
+    };
+    worker.addEventListener("error", errorCallback, { once: true });
     const workerTask = Promise.withResolvers();
     workerTasks.get(worker)?.set(id, workerTask);
     const request = { id, params: data };
@@ -52,11 +53,13 @@ function createTaskCallback(worker, eof) {
       workerTasks.get(worker)?.delete(id);
       if (eof)
         eof();
+      worker.removeEventListener("error", errorCallback);
       return result;
     } catch (error) {
       workerTasks.get(worker)?.delete(id);
       if (eof)
         eof();
+      worker.removeEventListener("error", errorCallback);
       throw error;
     }
   };
@@ -132,11 +135,11 @@ function createTaskId() {
 function withMessageInterceptor(worker) {
   const promiseTable = new Map;
   workerTasks.set(worker, promiseTable);
-  worker.addEventListener("message", (event) => {
+  worker.onmessage = (event) => {
     const { id, value } = event.data;
     promiseTable.get(id)?.resolve(value);
     promiseTable.delete(id);
-  });
+  };
   return worker;
 }
 export {

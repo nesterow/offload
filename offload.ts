@@ -54,15 +54,12 @@ function createTaskCallback<T, E>(
 ): TaskCallback<T, E> {
   const cb = async function (data: E): Promise<T> {
     const id = createTaskId();
-    worker.addEventListener(
-      "error",
-      (event) => {
-        const error = event.message;
-        workerTasks.get(worker)?.get(id)?.reject(new OffloadError(error, id));
-        workerTasks.get(worker)?.delete(id);
-      },
-      { once: true },
-    );
+    const errorCallback = (event: ErrorEvent) => {
+      const error = event.message;
+      workerTasks.get(worker)?.get(id)?.reject(new OffloadError(error, id));
+      workerTasks.get(worker)?.delete(id);
+    };
+    worker.addEventListener("error", errorCallback, { once: true });
     const workerTask = Promise.withResolvers<T>();
     workerTasks.get(worker)?.set(id, workerTask);
     const request: WorkerRequest<E> = { id, params: data };
@@ -71,10 +68,12 @@ function createTaskCallback<T, E>(
       const result = await workerTask.promise;
       workerTasks.get(worker)?.delete(id);
       if (eof) eof();
+      worker.removeEventListener("error", errorCallback);
       return result;
     } catch (error) {
       workerTasks.get(worker)?.delete(id);
       if (eof) eof();
+      worker.removeEventListener("error", errorCallback);
       throw error;
     }
   };
@@ -155,14 +154,13 @@ function terminate<T, E>(cb: TaskCallback<T, E>): void {
 function createTaskId(): Id {
   return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
 }
-
 function withMessageInterceptor(worker: Worker): Worker {
   const promiseTable: PromiseTable = new Map();
   workerTasks.set(worker, promiseTable);
-  worker.addEventListener("message", (event) => {
+  worker.onmessage = (event) => {
     const { id, value } = event.data as WorkerResponse<unknown>;
     promiseTable.get(id)?.resolve(value);
     promiseTable.delete(id);
-  });
+  };
   return worker;
 }
