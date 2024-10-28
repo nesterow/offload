@@ -12,12 +12,23 @@ Offload creates a limited execution pool and can operate in two modes:
 ## Install:
 
 ```bash
-bun add githib:nesterow/offload # or pnpm
+bun add github:nesterow/offload # or pnpm
 ```
 
 ## Usage
 
-Considering following worker:
+Offload accepts three positional arguments: worker path, pool size, and operation mode:
+
+```typescript
+const [task, terminate] = offload<ReturnType, ParamType>(
+  workerPath: string,
+  poolSize: number,
+  mode?: 'bg' | 'cb'
+)
+```
+
+
+Worker's main callback must be wrapped as `handler` and must receive single argument:
 
 ```typescript
 // print.worker.ts
@@ -34,7 +45,7 @@ handler(async (data: string) => {
 ### Callback operation mode
 
 In the callback mode, `print()` will spawn a worker and terminate it after the task is done.
-Maximum of 5 workers may be spawned at the same time, the rest will be queued:
+Maximum of `poolSize` workers may be spawned at the same time, the rest will be queued:
 
 ```typescript
 import { offload } from "@nesterow/offload";
@@ -50,7 +61,7 @@ This is default "safe" option as it allows to call `offload` in any part of the 
 
 ### Background operation mode
 
-In the background mode, offload will spawn 5 workers, `print()` will distribute the tasks among them:
+In the background mode, offload will spawn `poolSize` workers, `print()` will distribute the tasks among them:
 
 ```typescript
 import { offload } from "@nesterow/offload";
@@ -67,13 +78,13 @@ Generally it is more effective as it balances the load among the threads and doe
 
 ## Types
 
-Because offload doesn't know params and return types of your worker, you need to pass type arguments manually:
+Because offload doesn't know argument and return types of your worker's handler, you need to pass type arguments manually:
 
 ```typescript
-const [callback, termiate] = offload<ReturnType, ParamType>("./my.worker.ts", 1);
+const [callback, termiate] = offload<ReturnType, ArgType>("./my.worker.ts", 1);
 
-const param: ParamType = {};
-const result: ReturnType = await callback(param: ParamType);
+const arg: ArgType = {};
+const result: ReturnType = await callback(arg);
 ```
 
 ## License
